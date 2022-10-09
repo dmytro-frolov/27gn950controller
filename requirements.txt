@@ -1,0 +1,7 @@
+pyqt5
+hid
+darkdetect
+paho-mqtt
+rich
+PyInstaller
+Pillow
