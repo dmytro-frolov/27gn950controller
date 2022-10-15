@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 
+import os
 import re
 import sys
 from threading import Thread
@@ -11,7 +12,7 @@ from PyQt5.QtGui import *
 from PyQt5.QtWidgets import *
 
 import lib27gn950
-from helpers import read_config
+from helpers import Config
 from mqtt import MQTT
 
 
@@ -22,29 +23,20 @@ from mqtt import MQTT
 class Gui(QWidget):
     def __init__(self):
         super().__init__()
-        self.config = read_config()
+        self.config = Config()
         self.devs = []
-
-        self.m = MQTT(
-            self.devs,
-            self.config["mqtt_host"],
-            self.config["mqtt_port"],
-            self.config["mqtt_availability_topic"],
-            self.config["mqtt_command_topic"],
-            self.config["mqtt_contact_topic"],
-            self.config["mqtt_user"],
-            self.config["mqtt_password"],
-        )
-        # self.m.connect()
-        # spawn_thread(self.m)
-
-        self.init_ui()
-
-    def _mqtt(self, checked):
-        if not checked:
-            self.m.disconnect()
-        else:
-            self.m.connect()
+        self.is_mqtt_available = hasattr(self.config, "mqtt")
+        if self.is_mqtt_available:
+            self.m = MQTT(
+                self.devs,
+                self.config.mqtt_host,
+                self.config.mqtt_port,
+                self.config.mqtt_availability_topic,
+                self.config.mqtt_command_topic,
+                self.config.mqtt_contact_topic,
+                self.config.mqtt_user,
+                self.config.mqtt_password,
+            )
 
     def init_ui(self):
         self.setWindowTitle("27g950controller")
@@ -64,17 +56,20 @@ class Gui(QWidget):
         self.selectionMqttLayout.addWidget(QLabel("<b>MQTT: </b>"))
         x = QCheckBox()
         x.setCheckState(0)
-        if self.config["mqtt"]:
-            spawn_thread(self.m, start=True)
-            x.setCheckState(2)
+        # ugly
+        if self.is_mqtt_available:
+            if self.config.mqtt:
+                self.start_mqtt()
+                x.setCheckState(2)
+            else:
+                self.stop_mqtt()
         else:
-            spawn_thread(self.m, start=False)
+            x.setDisabled(True)
 
-        x.stateChanged.connect(lambda checked: spawn_thread(self.m, start=checked))
+        x.stateChanged.connect(
+            lambda checked: self.start_mqtt() if checked else self.stop_mqtt()
+        )
         self.selectionMqttLayout.addWidget(x)
-        # todo: create another qt thread that will bind to checkbox
-        # Thread(target=self._mqtt, args=(x.checkState(),)).start()
-        # self._mqtt(x.checkState())
 
         mainLayout.addLayout(self.selectionbuttonslayout)
         mainLayout.addLayout(self.selectionMqttLayout)
@@ -224,14 +219,21 @@ class Gui(QWidget):
         cmd = lib27gn950.get_set_color_command(slot, color)
         self.send_command(cmd)
 
+    def start_mqtt(self):
+        if not self.is_mqtt_available:
+            return
 
-def spawn_thread(m, start=False):
-    if start:
-        t = Thread(target=m.connect)
-        t.start()
-    else:
-        m.disconnect()
-        pass
+        try:
+            self.m.connect()
+            t = Thread(target=self.m.client.loop_forever)
+            t.start()
+        except Exception as e:
+            QErrorMessage().showMessage(e)
+
+    def stop_mqtt(self):
+        if not self.is_mqtt_available:
+            return
+        self.m.disconnect()
 
 
 class Tray(QSystemTrayIcon):
@@ -240,10 +242,11 @@ class Tray(QSystemTrayIcon):
         self.app = app
         self.gui = gui
 
+        basedir = os.path.dirname(__file__)
         if darkdetect.isLight():
-            icon = QIcon("icon-black.png")
+            icon = QIcon(os.path.join(basedir, "icon-black.png"))
         else:
-            icon = QIcon("icon-white.png")
+            icon = QIcon(os.path.join(basedir, "icon-white.png"))
 
         self.setIcon(icon)
         self.setVisible(True)
@@ -261,6 +264,10 @@ class Tray(QSystemTrayIcon):
         self.gui.show()
         self.gui.window().raise_()
 
+    def quit_action(self):
+        self.gui.stop_mqtt()
+        self.app.quit()
+
 
 app = QApplication(sys.argv)
 app.setQuitOnLastWindowClosed(False)
@@ -270,14 +277,12 @@ try:
     tray = Tray(app, x)
     menu = QMenu()
 
-    # Add a Quit option to the menu.
-    # todo: quit doesn't work properly when mqtt is on
     quit = QAction("Quit")
-    quit.triggered.connect(app.quit)
+    quit.triggered.connect(tray.quit_action)
     menu.addAction(quit)
-
     tray.setContextMenu(menu)
 
+    x.init_ui()
     x.init_monitors()
     x.show()
     sys.exit(app.exec_())

@@ -34,9 +34,6 @@ class MQTT:
             print("Connection error")
             exit(0)
 
-        # client.publish(self.mqtt_contact_topic, 'off', retain=True)
-        self.client.loop_forever()
-
     def disconnect(self):
         self.client.publish(self.mqtt_contact_topic, "off")
         self.client.publish(self.mqtt_availability_topic, "offline")
