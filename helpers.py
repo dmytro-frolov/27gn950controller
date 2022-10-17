@@ -1,3 +1,4 @@
+import os
 import logging
 import pathlib
 import platform
@@ -25,7 +26,7 @@ class Config:
                     "Support/BiasController/"
                 )
             case "Windows":
-                self.config = pathlib.Path("%AppData%/BiasController/")
+                self.config = pathlib.Path(os.environ['APPDATA']) / "BiasController"
 
         self.config /= "config.ini"
 
