@@ -3,6 +3,7 @@ import logging
 import os
 import re
 import sys
+from math import ceil
 from threading import Thread
 
 import darkdetect
@@ -88,19 +89,21 @@ class Gui(QWidget):
         powerbuttonslayout.addWidget(x, 1, 1)
         mainLayout.addLayout(powerbuttonslayout)
 
-        mainLayout.addWidget(QLabel(""))
+        mainLayout.addWidget(QLabel("Brightness"))
+        groupBox = QGroupBox()
 
-        brightnessbuttonslayout = QGridLayout(self)
-        brightnessbuttonslayout.addWidget(QLabel("<b>Brightness</b>"), 0, 0, 1, 6)
-        for i in range(1, 13):
-            x = QPushButton(str(i))
-            x.clicked.connect(lambda _, i=i: self.set_brightness(i))
-            row = 1 + i // 7
-            col = i - 1 - (6 if i > 6 else 0)
-            brightnessbuttonslayout.addWidget(x, row, col)
-        mainLayout.addLayout(brightnessbuttonslayout)
+        slider = QSlider(Qt.Horizontal)
+        slider.setFocusPolicy(Qt.StrongFocus)
+        slider.setTickPosition(QSlider.TicksBothSides)
+        slider.setTickInterval(10)
+        slider.setSingleStep(1)
 
-        mainLayout.addWidget(QLabel(""))
+        vbox = QVBoxLayout()
+        vbox.addWidget(slider)
+        groupBox.setLayout(vbox)
+
+        mainLayout.addWidget(groupBox)
+        slider.valueChanged.connect(self._on_slider)
 
         configbuttonslayout = QGridLayout(self)
         configbuttonslayout.addWidget(QLabel("<b>Lighting mode</b>"), 0, 0, 1, 4)
@@ -211,8 +214,12 @@ class Gui(QWidget):
         self.send_command(cmd)
 
     def set_brightness(self, brt):
-        cmd = lib27gn950.brightness_commands[brt]
-        self.send_command(cmd)
+        if brt < 1 or brt > 12:
+            self.turn_off()
+        else:
+            self.turn_on()
+            cmd = lib27gn950.brightness_commands[brt]
+            self.send_command(cmd)
 
     def set_color(self, slot):
         color = self.colorInputBox.text().lower()
@@ -221,7 +228,11 @@ class Gui(QWidget):
         cmd = lib27gn950.get_set_color_command(slot, color)
         self.send_command(cmd)
 
-    def start_mqtt(self):
+    def _on_slider(self, value):
+        brightness = value * 0.12
+        self.set_brightness(ceil(brightness))
+
+    def start_mqtt(self, checkbox):
         if not self.is_mqtt_available:
             return
 
