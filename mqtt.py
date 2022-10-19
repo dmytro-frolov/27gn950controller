@@ -1,6 +1,7 @@
 from dataclasses import dataclass
 from sys import exit
 
+import certifi
 import paho.mqtt.client as mqtt
 
 import lib27gn950 as bias
@@ -16,23 +17,32 @@ class MQTT:
     mqtt_contact_topic: str
     mqtt_user: str
     mqtt_password: str
+    mqtt_tls: str
 
     def __post_init__(self):
         self.client = mqtt.Client()
 
-    def connect(self):
+    def connect(self, callback=lambda x: None):
         self.client.on_connect = self.on_connect
         self.client.on_message = self.on_message
         self.client.on_disconnect = self.on_disconnect
         self.client.will_set(self.mqtt_availability_topic, "offline", 0, False)
+        # https://stackoverflow.com/questions/70110392/mqtt-tls-certificate-verify-failed-self-signed-certificate
+        if self.mqtt_tls:
+            try:
+                self.client.tls_set(certifi.where())
+            except ValueError:
+                pass
 
         self.client.username_pw_set(self.mqtt_user, self.mqtt_password)
 
         try:
             self.client.connect(self.host, self.port, 60)
-        except TimeoutError:
-            print("Connection error")
-            exit(0)
+            self.client.loop_forever()
+        except Exception as e:
+            print(e)
+            callback(e)
+        exit(0)
 
     def disconnect(self):
         self.client.publish(self.mqtt_contact_topic, "off")
@@ -57,3 +67,9 @@ class MQTT:
     def on_disconnect(self, client, userdata, rc):
         print("Connection error")
         bias.send_command(bias.control_commands["turn_off"], self.devs)
+
+    def loop(self, callback=lambda x: None):
+        try:
+            self.client.loop_forever()
+        except Exception as e:
+            callback(e)

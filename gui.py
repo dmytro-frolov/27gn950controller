@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-
+import logging
 import os
 import re
 import sys
@@ -15,6 +15,7 @@ import lib27gn950
 from helpers import Config
 from mqtt import MQTT
 
+log = logging.getLogger(__name__)
 
 # https://pypi.org/project/hid/
 # https://github.com/apmorton/pyhidapi
@@ -36,6 +37,7 @@ class Gui(QWidget):
                 self.config.mqtt_contact_topic,
                 self.config.mqtt_user,
                 self.config.mqtt_password,
+                self.config.mqtt_tls,
             )
 
     def init_ui(self):
@@ -59,7 +61,7 @@ class Gui(QWidget):
         # ugly
         if self.is_mqtt_available:
             if self.config.mqtt:
-                self.start_mqtt()
+                self.start_mqtt(x)
                 x.setCheckState(2)
             else:
                 self.stop_mqtt()
@@ -67,7 +69,7 @@ class Gui(QWidget):
             x.setDisabled(True)
 
         x.stateChanged.connect(
-            lambda checked: self.start_mqtt() if checked else self.stop_mqtt()
+            lambda checked: self.start_mqtt(x) if checked == 2 else self.stop_mqtt()
         )
         self.selectionMqttLayout.addWidget(x)
 
@@ -223,17 +225,22 @@ class Gui(QWidget):
         if not self.is_mqtt_available:
             return
 
-        try:
-            self.m.connect()
-            t = Thread(target=self.m.client.loop_forever)
-            t.start()
-        except Exception as e:
-            QErrorMessage().showMessage(e)
+        t = Thread(
+            target=self.m.connect, args=(lambda e: self._on_mqtt_error(e, checkbox),)
+        )
+        t.start()
 
     def stop_mqtt(self):
         if not self.is_mqtt_available:
             return
         self.m.disconnect()
+
+    @staticmethod
+    def _on_mqtt_error(e, checkbox):
+        log.error(e)
+        checkbox.setCheckState(1)
+        checkbox.setDisabled(True)
+        # QErrorMessage().showMessage("Connection error")  # doesn't work
 
 
 class Tray(QSystemTrayIcon):
