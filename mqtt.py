@@ -45,7 +45,6 @@ class MQTT:
         exit(0)
 
     def disconnect(self):
-        self.client.publish(self.mqtt_contact_topic, "off")
         self.client.publish(self.mqtt_availability_topic, "offline")
         self.client.disconnect()
 

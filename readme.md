@@ -66,6 +66,9 @@ On other Linuxes and macOS:
 To control the monitor brightness (of the screen, not the bias lighting), see:
   https://www.subraizada.com/blog/ddc/
 
+### Build
+- To build for macos use `rm -rf dist build  && pyinstaller macos_pyinstaller.spec`
+
 ### Multimonitor
 
 Multimonitor support:
