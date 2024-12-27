@@ -40,6 +40,7 @@ class Gui(QWidget):
                 self.config.mqtt_password,
                 self.config.mqtt_tls,
             )
+        self.hide_on_startup = self.config.hide_on_startup
 
     def init_ui(self):
         self.setWindowTitle("27g950controller")
@@ -299,7 +300,8 @@ try:
 
     x.init_ui()
     x.init_monitors()
-    x.show()
+    if not x.hide_on_startup:
+        x.show()
     sys.exit(app.exec_())
 
 finally:

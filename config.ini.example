@@ -7,3 +7,4 @@ mqtt_contact_topic=lg27gn950/contact
 mqtt_user=user
 mqtt_password=password
 mqtt_tls=True
+hide_on_startup=False
