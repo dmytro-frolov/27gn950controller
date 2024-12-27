@@ -1,13 +1,12 @@
 # -*- mode: python ; coding: utf-8 -*-
 
-
 block_cipher = None
 
 
 a = Analysis(
     ['gui.py'],
     pathex=[],
-    binaries=[],
+    binaries=[("libhidapi.dylib", "."), ("hidapi.dll", "."),],
     datas=[('icon-black.png', './'), ('icon-white.png', './')],
     hiddenimports=[],
     hookspath=[],

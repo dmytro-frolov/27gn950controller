@@ -21,6 +21,7 @@ class MQTT:
 
     def __post_init__(self):
         self.client = mqtt.Client()
+        self.quit = False
 
     def connect(self, mqtt_checkbox):
         self.mqtt_checkbox = mqtt_checkbox
@@ -38,7 +39,7 @@ class MQTT:
         self.client.username_pw_set(self.mqtt_user, self.mqtt_password)
 
         while True:
-            if mqtt_checkbox.checkState() == 0:
+            if mqtt_checkbox.checkState() == 0 or self.quit:
                 return
 
             try:
@@ -54,7 +55,10 @@ class MQTT:
                 mqtt_checkbox.setDisabled(True)
                 time.sleep(5)
 
-    def disconnect(self):
+    def disconnect(self, force=False):
+        if force:
+            self.quit = True
+
         print("Disconnect")
 
         self.client.publish(self.mqtt_availability_topic, "offline")

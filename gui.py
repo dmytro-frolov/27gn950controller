@@ -249,7 +249,7 @@ class Gui(QWidget):
     def stop_mqtt(self):
         if not self.is_mqtt_available:
             return
-        self.m.disconnect()
+        self.m.disconnect(force=True)
 
 
 class Tray(QSystemTrayIcon):

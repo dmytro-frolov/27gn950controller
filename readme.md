@@ -67,6 +67,7 @@ To control the monitor brightness (of the screen, not the bias lighting), see:
   https://www.subraizada.com/blog/ddc/
 
 ### Build
+clean: `rm -rf dist && rm -rf build`
 - Macos `pyinstaller macos_pyinstaller.spec`
 - Windows `pyinstaller.exe .\windows_pyinstaller.spec `
 
