@@ -66,6 +66,11 @@ On other Linuxes and macOS:
 To control the monitor brightness (of the screen, not the bias lighting), see:
   https://www.subraizada.com/blog/ddc/
 
+### Build
+clean: `rm -rf dist && rm -rf build`
+- Macos `pyinstaller macos_pyinstaller.spec`
+- Windows `pyinstaller.exe .\windows_pyinstaller.spec `
+
 ### Multimonitor
 
 Multimonitor support:
@@ -83,3 +88,9 @@ By default, that command will apply to all monitors. You can select specific mon
 
 - To turn off monitor 2: `sudo ./console.py 2,turn_off`
 - To set the color of static color slot 2 to green, only on monitors 1 and 3: `sudo ./console.py 1,3,set 2 00ff00`
+
+### MQTT
+Make sure you have changed and copied `config.ini.example` as `config.ini` under:
+
+Macos - `~/Library/Application Support/BiasController/config.ini`
+Windows - `%APPDATA%\BiasController\config.ini`
