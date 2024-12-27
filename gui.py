@@ -57,22 +57,25 @@ class Gui(QWidget):
         powerbuttonslayout = QGridLayout(self)
         powerbuttonslayout.addWidget(QLabel("<b>Power</b>"), 0, 0, 1, 2)
         self.selectionMqttLayout.addWidget(QLabel("<b>MQTT: </b>"))
-        x = QCheckBox()
-        x.setCheckState(0)
+
+        mqqt_checkbox = QCheckBox()
+        mqqt_checkbox.setCheckState(0)
         # ugly
         if self.is_mqtt_available:
             if self.config.mqtt:
-                self.start_mqtt(x)
-                x.setCheckState(2)
+                self.start_mqtt(mqqt_checkbox)
+                mqqt_checkbox.setCheckState(2)
             else:
                 self.stop_mqtt()
         else:
-            x.setDisabled(True)
+            mqqt_checkbox.setDisabled(True)
 
-        x.stateChanged.connect(
-            lambda checked: self.start_mqtt(x) if checked == 2 else self.stop_mqtt()
+        mqqt_checkbox.stateChanged.connect(
+            lambda checked: (
+                self.start_mqtt(mqqt_checkbox) if checked == 2 else self.stop_mqtt()
+            )
         )
-        self.selectionMqttLayout.addWidget(x)
+        self.selectionMqttLayout.addWidget(mqqt_checkbox)
 
         mainLayout.addLayout(self.selectionbuttonslayout)
         mainLayout.addLayout(self.selectionMqttLayout)
@@ -237,7 +240,8 @@ class Gui(QWidget):
             return
 
         t = Thread(
-            target=self.m.connect, args=(lambda e: self._on_mqtt_error(e, checkbox),)
+            target=self.m.connect,
+            args=(checkbox,),
         )
         t.start()
 
@@ -245,13 +249,6 @@ class Gui(QWidget):
         if not self.is_mqtt_available:
             return
         self.m.disconnect()
-
-    @staticmethod
-    def _on_mqtt_error(e, checkbox):
-        log.error(e)
-        checkbox.setCheckState(1)
-        checkbox.setDisabled(True)
-        # QErrorMessage().showMessage("Connection error")  # doesn't work
 
 
 class Tray(QSystemTrayIcon):
