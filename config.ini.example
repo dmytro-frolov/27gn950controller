@@ -1,0 +1,9 @@
+mqtt=True
+mqtt_host=example.hivemq.cloud
+mqtt_port=8883
+mqtt_availability_topic=lg27gn950/availability
+mqtt_command_topic=lg27gn950/command
+mqtt_contact_topic=lg27gn950/contact
+mqtt_user=user
+mqtt_password=password
+mqtt_tls=True
